@@ -32,7 +32,7 @@ app.post('/groq', async (req, res) => {
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
-      body: JSON.stringify({ model: 'llama3-70b-8192', messages: groqMessages, max_tokens: max_tokens || 1500, temperature: 0.7 })
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: groqMessages, max_tokens: max_tokens || 1500, temperature: 0.7 })
     });
     const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
