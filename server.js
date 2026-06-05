@@ -1,39 +1,3 @@
-const express = require('express');
-const fetch = require('node-fetch');
-const app = express();
-app.use(express.json());
-
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
-
-const ALPACA_KEY    = 'PKAL6V3BYVDTMT2JALXUMHIFT4';
-const ALPACA_SECRET = 'GwvVoFMQEqzcgeyDJznpDAeVHCTCtmDUwAV9XAq8hpob';
-const GROQ_KEY      = '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';
-
-// ── Alpaca proxy
-app.get('/alpaca/*', async (req, res) => {
-  const path = req.params[0];
-  const query = new URLSearchParams(req.query).toString();
-  const url = `https://data.alpaca.markets/${path}${query ? '?' + query : ''}`;
-  console.log('Alpaca:', url);
-  try {
-    const r = await fetch(url, {
-      headers: {
-        'APCA-API-KEY-ID': ALPACA_KEY,
-        'APCA-API-SECRET-KEY': ALPACA_SECRET,
-        'Accept': 'application/json'
-      }
-    });
-    res.json(await r.json());
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
 
 // ── Groq proxy (free AI chat)
 app.post('/groq', async (req, res) => {
