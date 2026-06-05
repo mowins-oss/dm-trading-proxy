@@ -13,7 +13,7 @@ app.use((req, res, next) => {
 
 const ALPACA_KEY    = 'PKAL6V3BYVDTMT2JALXUMHIFT4';
 const ALPACA_SECRET = 'GwvVoFMQEqzcgeyDJznpDAeVHCTCtmDUwAV9XAq8hpob';
-const GROQ_KEY      = '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';
+const GROQ_KEY      = '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';
 
 app.get('/alpaca/*', async (req, res) => {
   const path = req.params[0];
