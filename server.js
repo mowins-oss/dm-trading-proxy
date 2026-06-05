@@ -20,47 +20,25 @@ app.get('/alpaca/*', async (req, res) => {
   const query = new URLSearchParams(req.query).toString();
   const url = `https://data.alpaca.markets/${path}${query ? '?' + query : ''}`;
   try {
-    const r = await fetch(url, {
-      headers: {
-        'APCA-API-KEY-ID': ALPACA_KEY,
-        'APCA-API-SECRET-KEY': ALPACA_SECRET,
-        'Accept': 'application/json'
-      }
-    });
+    const r = await fetch(url, { headers: { 'APCA-API-KEY-ID': ALPACA_KEY, 'APCA-API-SECRET-KEY': ALPACA_SECRET }});
     res.json(await r.json());
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/groq', async (req, res) => {
   try {
     const { system, messages, max_tokens } = req.body;
-    const groqMessages = system
-      ? [{ role: 'system', content: system }, ...messages]
-      : messages;
-
+    const groqMessages = system ? [{ role: 'system', content: system }, ...messages] : messages;
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'llama3-70b-8192',
-        messages: groqMessages,
-        max_tokens: max_tokens || 1500,
-        temperature: 0.7
-      })
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
+      body: JSON.stringify({ model: 'llama3-70b-8192', messages: groqMessages, max_tokens: max_tokens || 1500, temperature: 0.7 })
     });
-
     const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
     const text = data.choices?.[0]?.message?.content || 'No response received.';
     res.json({ content: [{ type: 'text', text }] });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/', (req, res) => res.json({ status: 'DM Trading Proxy running' }));
