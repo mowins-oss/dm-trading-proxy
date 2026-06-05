@@ -13,34 +13,55 @@ app.use((req, res, next) => {
 
 const ALPACA_KEY    = 'PKAL6V3BYVDTMT2JALXUMHIFT4';
 const ALPACA_SECRET = 'GwvVoFMQEqzcgeyDJznpDAeVHCTCtmDUwAV9XAq8hpob';
-const GROQ_KEY      = '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';
+const GROQ_KEY      = process.env.GROQ_KEY;
 
 app.get('/alpaca/*', async (req, res) => {
   const path = req.params[0];
   const query = new URLSearchParams(req.query).toString();
   const url = `https://data.alpaca.markets/${path}${query ? '?' + query : ''}`;
   try {
-    const r = await fetch(url, { headers: { 'APCA-API-KEY-ID': ALPACA_KEY, 'APCA-API-SECRET-KEY': ALPACA_SECRET, 'Accept': 'application/json' }});
+    const r = await fetch(url, {
+      headers: {
+        'APCA-API-KEY-ID': ALPACA_KEY,
+        'APCA-API-SECRET-KEY': ALPACA_SECRET,
+        'Accept': 'application/json'
+      }
+    });
     res.json(await r.json());
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/groq', async (req, res) => {
   try {
     const { system, messages, max_tokens } = req.body;
-    const groqMessages = system ? [{ role: 'system', content: system }, ...messages] : messages;
+    const groqMessages = system
+      ? [{ role: 'system', content: system }, ...messages]
+      : messages;
+
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
-      body: JSON.stringify({ model: 'llama3-70b-8192', messages: groqMessages, max_tokens: max_tokens || 1500, temperature: 0.7 })
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama3-70b-8192',
+        messages: groqMessages,
+        max_tokens: max_tokens || 1500,
+        temperature: 0.7
+      })
     });
-    const raw = await r.text();
-    const data = JSON.parse(raw);
+
+    const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
     const text = data.choices?.[0]?.message?.content || 'No response received.';
     res.json({ content: [{ type: 'text', text }] });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-app.get('/', (req, res) => res.json({ status: 'DM Trading Proxy running ✅' }));
+app.get('/', (req, res) => res.json({ status: 'DM Trading Proxy running' }));
 app.listen(process.env.PORT || 3000, () => console.log('Proxy running'));
