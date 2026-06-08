@@ -48,7 +48,6 @@ app.post('/groq', async (req, res) => {
 app.post('/gemini', async (req, res) => {
   try {
     const { system, messages, max_tokens } = req.body;
-    // Gemini takes a single "contents" array; fold system + messages into it.
     const parts = [];
     if (system) parts.push(`[SYSTEM INSTRUCTIONS]\n${system}`);
     (messages || []).forEach(m => {
@@ -57,7 +56,7 @@ app.post('/gemini', async (req, res) => {
     });
     const prompt = parts.join('\n\n');
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
     const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
