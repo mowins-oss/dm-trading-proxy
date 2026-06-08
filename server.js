@@ -14,6 +14,7 @@ app.use((req, res, next) => {
 const ALPACA_KEY    = 'PKAL6V3BYVDTMT2JALXUMHIFT4';
 const ALPACA_SECRET = 'GwvVoFMQEqzcgeyDJznpDAeVHCTCtmDUwAV9XAq8hpob';
 const GROQ_KEY      = process.env.GROQ_KEY;
+const TWELVE_KEY    = process.env.TWELVE_KEY;
 
 app.get('/alpaca/*', async (req, res) => {
   const path = req.params[0];
@@ -38,6 +39,19 @@ app.post('/groq', async (req, res) => {
     if (data.error) return res.status(500).json({ error: data.error.message });
     const text = data.choices?.[0]?.message?.content || 'No response received.';
     res.json({ content: [{ type: 'text', text }] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Twelve Data proxy — intraday bars (1min, 5min, 15min, 30min, 1h, 4h).
+// Key is read from the Render environment variable TWELVE_KEY (never hardcoded).
+app.get('/twelve/*', async (req, res) => {
+  const path = req.params[0];
+  const qs = new URLSearchParams(req.query);
+  qs.set('apikey', TWELVE_KEY);
+  const url = `https://api.twelvedata.com/${path}?${qs.toString()}`;
+  try {
+    const r = await fetch(url);
+    res.json(await r.json());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
