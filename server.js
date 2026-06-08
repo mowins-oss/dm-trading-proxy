@@ -15,6 +15,7 @@ const ALPACA_KEY    = 'PKAL6V3BYVDTMT2JALXUMHIFT4';
 const ALPACA_SECRET = 'GwvVoFMQEqzcgeyDJznpDAeVHCTCtmDUwAV9XAq8hpob';
 const GROQ_KEY      = process.env.GROQ_KEY;
 const TWELVE_KEY    = process.env.TWELVE_KEY;
+const GEMINI_KEY    = process.env.GEMINI_KEY;
 
 app.get('/alpaca/*', async (req, res) => {
   const path = req.params[0];
@@ -38,6 +39,36 @@ app.post('/groq', async (req, res) => {
     const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
     const text = data.choices?.[0]?.message?.content || 'No response received.';
+    res.json({ content: [{ type: 'text', text }] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Gemini fallback — same request shape as /groq, same response shape out.
+// Used by the app when Groq is rate-limited or errors. Key in GEMINI_KEY env var.
+app.post('/gemini', async (req, res) => {
+  try {
+    const { system, messages, max_tokens } = req.body;
+    // Gemini takes a single "contents" array; fold system + messages into it.
+    const parts = [];
+    if (system) parts.push(`[SYSTEM INSTRUCTIONS]\n${system}`);
+    (messages || []).forEach(m => {
+      const who = m.role === 'assistant' ? 'ASSISTANT' : 'USER';
+      parts.push(`[${who}]\n${m.content}`);
+    });
+    const prompt = parts.join('\n\n');
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: max_tokens || 1500, temperature: 0.7 }
+      })
+    });
+    const data = await r.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
     res.json({ content: [{ type: 'text', text }] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
